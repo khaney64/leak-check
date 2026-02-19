@@ -116,10 +116,23 @@ function isRealProvider(provider) {
   return provider && provider !== 'openclaw';
 }
 
+function buildConfigEchoPattern(searchValue) {
+  // Build a regex that detects the config JSON definition of a credential
+  // at any level of JSON escaping: "search": "VALUE", \"search\": \"VALUE\", etc.
+  const escaped = escapeRegex(searchValue);
+  return new RegExp(`\\\\*"search\\\\*"\\s*:\\s*\\\\*"${escaped}\\\\*"`);
+}
+
 function scanFile(filePath, credentials, matchers) {
   const content = fs.readFileSync(filePath, 'utf-8');
   const lines = content.split('\n');
   const sessionGuid = extractSessionGuid(filePath);
+
+  // Determine which credentials have their config definition echoed in this file.
+  // If the config JSON for a credential appears anywhere in the file, matches
+  // are likely from the AI reading/discussing the config, not actual credential leaks.
+  const configEchoPatterns = credentials.map(c => buildConfigEchoPattern(c.search));
+  const isConfigEcho = credentials.map((_, i) => configEchoPatterns[i].test(content));
 
   // Track the last real provider/model seen in this file
   let lastRealProvider = 'unknown';
@@ -185,7 +198,8 @@ function scanFile(filePath, credentials, matchers) {
           session: sessionGuid,
           timestamp: timestamp,
           provider: provider,
-          model: model
+          model: model,
+          configEcho: isConfigEcho[i]
         });
       }
     }
@@ -194,17 +208,7 @@ function scanFile(filePath, credentials, matchers) {
   return Array.from(matches.values());
 }
 
-function formatDiscordOutput(leaks, filesScanned, credsChecked) {
-  const lines = ['🔐 **Credential Leak Check**'];
-
-  if (leaks.length === 0) {
-    lines.push(`✅ No leaked credentials found (checked ${filesScanned} files, ${credsChecked} credentials)`);
-    return lines.join('\n');
-  }
-
-  lines.push('');
-  lines.push(`⚠️ **${leaks.length} leaked credential${leaks.length === 1 ? '' : 's'} found**`);
-
+function formatLeakSection(lines, leaks, heading) {
   // Group by credential name
   const grouped = {};
   for (const leak of leaks) {
@@ -229,6 +233,35 @@ function formatDiscordOutput(leaks, filesScanned, credsChecked) {
       lines.push(`• \`${shortSession}\` | ${ts} | ${modelInfo}`);
     }
   }
+}
+
+function formatDiscordOutput(leaks, filesScanned, credsChecked) {
+  const lines = ['🔐 **Credential Leak Check**'];
+
+  const realLeaks = leaks.filter(l => !l.configEcho);
+  const configLeaks = leaks.filter(l => l.configEcho);
+
+  if (realLeaks.length === 0 && configLeaks.length === 0) {
+    lines.push(`✅ No leaked credentials found (checked ${filesScanned} files, ${credsChecked} credentials)`);
+    return lines.join('\n');
+  }
+
+  if (realLeaks.length > 0) {
+    lines.push('');
+    lines.push(`⚠️ **${realLeaks.length} leaked credential${realLeaks.length === 1 ? '' : 's'} found**`);
+    formatLeakSection(lines, realLeaks);
+  }
+
+  if (configLeaks.length > 0) {
+    lines.push('');
+    lines.push(`📋 **${configLeaks.length} possible config echo${configLeaks.length === 1 ? '' : 'es'}** (session contains leak-check config)`);
+    formatLeakSection(lines, configLeaks);
+  }
+
+  if (realLeaks.length === 0) {
+    lines.push('');
+    lines.push(`✅ No credential leaks beyond config echoes`);
+  }
 
   return lines.join('\n');
 }
@@ -248,12 +281,16 @@ function formatTimestamp(ts) {
 }
 
 function formatJsonOutput(leaks, filesScanned, credsChecked) {
+  const realLeaks = leaks.filter(l => !l.configEcho);
+  const configEchoes = leaks.filter(l => l.configEcho);
   return JSON.stringify({
-    leaks: leaks,
+    leaks: realLeaks,
+    configEchoes: configEchoes,
     summary: {
       filesScanned: filesScanned,
       credentialsChecked: credsChecked,
-      leaksFound: leaks.length
+      leaksFound: realLeaks.length,
+      configEchoesFound: configEchoes.length
     }
   }, null, 2);
 }

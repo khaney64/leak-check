@@ -67,6 +67,27 @@ Or if clean:
 ✅ No leaked credentials found (checked 370 files, 7 credentials)
 ```
 
+### Config Echoes
+
+If the `leak-check.json` config file is read or discussed during an OpenClaw session, the credential patterns will appear in that session's JSONL log. The scanner detects this and reports these matches separately as **config echoes** rather than real leaks:
+
+```
+📋 **3 possible config echoes** (session contains leak-check config)
+
+• **Discord**: 1 session
+...
+
+✅ No credential leaks beyond config echoes
+```
+
+Config echoes will continue to appear on every run until the session file is removed. To clear them, delete the session file from `~/.openclaw/agents/main/sessions/`:
+
+```bash
+rm ~/.openclaw/agents/main/sessions/<session-uuid>.jsonl
+```
+
+**Tip:** Avoid reading or referencing `leak-check.json` during an OpenClaw session. If it happens, note the session ID from the report and delete it.
+
 ### JSON
 
 ```json
@@ -79,10 +100,20 @@ Or if clean:
       "provider": "anthropic"
     }
   ],
+  "configEchoes": [
+    {
+      "credential": "Gateway",
+      "session": "b175e53c",
+      "timestamp": "2026-02-19T18:00:30.067Z",
+      "provider": "minimax-portal",
+      "configEcho": true
+    }
+  ],
   "summary": {
     "filesScanned": 370,
     "credentialsChecked": 7,
-    "leaksFound": 2
+    "leaksFound": 2,
+    "configEchoesFound": 1
   }
 }
 ```
