@@ -31,7 +31,8 @@ function parseArgs(argv) {
     } else if (argv[i] === '--format' && i + 1 < argv.length) {
       args.format = argv[++i];
     } else if (argv[i] === '--config' && i + 1 < argv.length) {
-      args.config = argv[++i];
+      const val = argv[++i];
+      args.config = val.startsWith('~/') ? path.join(os.homedir(), val.slice(2)) : val;
     }
     i++;
   }
