@@ -20,7 +20,19 @@ node scripts/leak-check.js --format json
 
 ## Configuration
 
-Credentials to check are defined in `leak-check.json`:
+Credentials to check are defined in `leak-check.json`. The script searches for this file in order:
+
+1. **Skill directory** (`./leak-check.json`) — for backward compatibility
+2. **`~/clawd/leak-check.json`** — recommended persistent location (survives skill updates via clawhub)
+
+Since clawhub clears the skill directory on updates, place your config in `~/clawd/` to avoid losing it:
+
+```bash
+mkdir -p ~/clawd
+cp leak-check.json ~/clawd/leak-check.json
+```
+
+You can also specify an explicit path with `--config`.
 
 ```json
 [
@@ -41,7 +53,7 @@ Credentials to check are defined in `leak-check.json`:
 ## Options
 
 - `--format <type>` — Output format: `discord` (default) or `json`
-- `--config <path>` — Path to credential config file (default: `leak-check.json` in skill root)
+- `--config <path>` — Path to credential config file (default: `./leak-check.json`, then `~/clawd/leak-check.json`)
 - `--help`, `-h` — Show help message
 
 ## Output
