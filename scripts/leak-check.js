@@ -7,13 +7,13 @@ const os = require('os');
 const DEFAULT_SESSION_PATH = path.join(os.homedir(), '.openclaw', 'agents', 'main', 'sessions');
 const CONFIG_FILENAME = 'leak-check.json';
 const SKILL_ROOT_CONFIG = path.join(__dirname, '..', CONFIG_FILENAME);
-const CLAWD_CONFIG = path.join(os.homedir(), 'clawd', CONFIG_FILENAME);
+const OPENCLAW_CREDENTIALS_CONFIG = path.join(os.homedir(), '.openclaw', 'credentials', CONFIG_FILENAME);
 
 function resolveConfigPath() {
   // 1. Skill root (backward compat — may be wiped by clawhub updates)
   if (fs.existsSync(SKILL_ROOT_CONFIG)) return SKILL_ROOT_CONFIG;
-  // 2. ~/clawd/ (persistent location)
-  if (fs.existsSync(CLAWD_CONFIG)) return CLAWD_CONFIG;
+  // 2. ~/.openclaw/credentials/ (persistent location)
+  if (fs.existsSync(OPENCLAW_CREDENTIALS_CONFIG)) return OPENCLAW_CREDENTIALS_CONFIG;
   return null;
 }
 
@@ -53,7 +53,7 @@ function printHelp() {
   console.log('Options:');
   console.log('  --format <type>    Output format: discord (default) or json');
   console.log('  --config <path>    Path to credential config file');
-  console.log('                     Default: ./leak-check.json, then ~/clawd/leak-check.json');
+  console.log('                     Default: ./leak-check.json, then ~/.openclaw/credentials/leak-check.json');
   console.log('  --help, -h         Show this help message');
   console.log('');
   console.log('Examples:');
@@ -64,7 +64,7 @@ function printHelp() {
 
 function loadCredentials(configPath) {
   if (!configPath) {
-    console.error(`Error: Config file not found. Place leak-check.json in the skill directory or ~/clawd/, or use --config.`);
+    console.error(`Error: Config file not found. Place leak-check.json in the skill directory or ~/.openclaw/credentials/, or use --config.`);
     process.exit(1);
   }
   if (!fs.existsSync(configPath)) {
