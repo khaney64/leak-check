@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+// Security: This script is local-only and read-only.
+// - Only built-in modules: fs (read-only), path, os
+// - No network, child_process, eval, file writes, or external dependencies
+// - Output goes to stdout only
+
 const fs = require('fs');
 const path = require('path');
 const os = require('os');

@@ -129,3 +129,31 @@ rm ~/.openclaw/agents/main/sessions/<session-uuid>.jsonl
   }
 }
 ```
+
+## Security
+
+This skill is designed to be **local-only and read-only**. The following properties can be verified by inspecting `scripts/leak-check.js`:
+
+- **No network access** — no use of `http`, `https`, `net`, `dgram`, `fetch`, `WebSocket`, or any network API
+- **No child processes** — no use of `child_process`, `exec`, `spawn`, or `execSync`
+- **No external dependencies** — zero `npm` packages; only Node.js built-ins (`fs`, `path`, `os`)
+- **No dynamic code execution** — no `eval()`, `Function()`, or dynamic `require()`/`import()`
+- **No file writes** — only `fs.readFileSync`, `fs.existsSync`, and `fs.readdirSync` are used; no files are created, modified, or deleted
+- **No environment variable access** — does not read `process.env`
+- **Output is stdout only** — all results go to `console.log`; nothing is sent elsewhere
+
+### Verify It Yourself
+
+Confirm no unexpected APIs are used anywhere in the script:
+
+```bash
+grep -E 'require\(|import |http|fetch|net\.|dgram|child_process|exec|spawn|eval\(|Function\(|\.write|\.unlink|\.rename|process\.env' scripts/leak-check.js
+```
+
+Expected output — only the three built-in `require()` calls at the top of the file:
+
+```
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+```
