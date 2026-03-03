@@ -173,13 +173,14 @@ function scanFile(filePath, credentials, matchers) {
         // model_change events
         if (record.type === 'model_change' && isRealProvider(record.provider)) {
           lastRealProvider = record.provider;
-          if (record.model) lastRealModel = record.model;
+          const modelName = record.modelId || record.model;
+          if (modelName) lastRealModel = modelName;
         }
 
         // Cost-bearing message entries
         if (record.type === 'message' && record.message) {
           const msg = record.message;
-          if (isRealProvider(msg.provider) && msg.usage?.cost?.total > 0) {
+          if (isRealProvider(msg.provider)) {
             lastRealProvider = msg.provider;
             if (msg.model) lastRealModel = msg.model;
           }
