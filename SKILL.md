@@ -12,10 +12,10 @@ Scan OpenClaw session JSONL files for leaked credentials. Reports which real AI 
 
 ```bash
 # Check for leaked credentials (default: discord format)
-node scripts/leak-check.js
+node /home/claw/.openclaw/workspace/skills/leak-check/scripts/leak-check.js
 
 # JSON output
-node scripts/leak-check.js --format json
+node /home/claw/.openclaw/workspace/skills/leak-check/scripts/leak-check.js --format json
 ```
 
 ## Configuration
